@@ -1,61 +1,49 @@
-import io
-import base64
-import time
-import requests
-import numpy as np
-from PIL import Image
+"""Flux 2 Max Direct — V3 async node with 8 IMAGE slots."""
+from comfy_api.latest import ComfyExtension, io
 import comfy.utils
-from .base import BaseFlux, REQUEST_TIMEOUT
-from .status import Status
-from .config_node import get_config_loader
+from .base import image_to_base64, create_blank_image, post_request, poll_for_result
+
+# Custom type for BFL config passthrough
+BflConfig = io.Custom("BFL_CONFIG")
 
 
-def image_to_base64(image_tensor):
-    """Convert a ComfyUI IMAGE tensor to base64 JPEG string."""
-    img_array = (image_tensor[0].numpy() * 255).astype(np.uint8)
-    pil_image = Image.fromarray(img_array).convert("RGB")
-    buffer = io.BytesIO()
-    pil_image.save(buffer, format="JPEG", quality=95)
-    return base64.b64encode(buffer.getvalue()).decode("utf-8")
-
-
-class Flux2MaxDirect(BaseFlux):
-    """Flux 2 Max with direct IMAGE inputs — no separate base64 converter needed.
-    Supports up to 8 reference images, matching the BFL API."""
-
-    CATEGORY = "BFL/Flux2"
+class Flux2MaxDirect(io.ComfyNode):
+    """Flux 2 Max with direct IMAGE inputs — up to 8 reference images."""
 
     @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "prompt": ("STRING", {"default": "", "multiline": True}),
-                "safety_tolerance": ("INT", {"default": 2, "min": 0, "max": 5}),
-                "output_format": (["jpeg", "png"], {"default": "jpeg"}),
-            },
-            "optional": {
-                "image_1": ("IMAGE",),
-                "image_2": ("IMAGE",),
-                "image_3": ("IMAGE",),
-                "image_4": ("IMAGE",),
-                "image_5": ("IMAGE",),
-                "image_6": ("IMAGE",),
-                "image_7": ("IMAGE",),
-                "image_8": ("IMAGE",),
-                "width": ("INT", {"default": 0, "min": 0}),
-                "height": ("INT", {"default": 0, "min": 0}),
-                "seed": ("INT", {"default": -1}),
-                "webhook_url": ("STRING", {"default": ""}),
-                "webhook_secret": ("STRING", {"default": ""}),
-                "config": ("BFL_CONFIG",),
-            },
-        }
+    def define_schema(cls):
+        return io.Schema(
+            node_id="Flux2MaxDirect_BFL",
+            display_name="Flux 2 Max Direct (BFL)",
+            category="BFL/Flux2",
+            description="Generate images via Flux 2 Max API with up to 8 reference images",
+            inputs=[
+                io.String.Input("prompt", default="", multiline=True),
+                io.Int.Input("safety_tolerance", default=2, min=0, max=5),
+                io.Combo.Input("output_format", options=["jpeg", "png"], default="jpeg"),
+                io.Image.Input("image_1", optional=True),
+                io.Image.Input("image_2", optional=True),
+                io.Image.Input("image_3", optional=True),
+                io.Image.Input("image_4", optional=True),
+                io.Image.Input("image_5", optional=True),
+                io.Image.Input("image_6", optional=True),
+                io.Image.Input("image_7", optional=True),
+                io.Image.Input("image_8", optional=True),
+                io.Int.Input("width", default=0, min=0),
+                io.Int.Input("height", default=0, min=0),
+                io.Int.Input("seed", default=-1),
+                io.String.Input("webhook_url", default="", optional=True),
+                io.String.Input("webhook_secret", default="", optional=True),
+                BflConfig.Input("config", optional=True),
+            ],
+            outputs=[
+                io.Image.Output(display_name="IMAGE"),
+            ],
+        )
 
-    RETURN_TYPES = ("IMAGE",)
-    FUNCTION = "generate_image"
-
-    def generate_image(
-        self,
+    @classmethod
+    async def execute(
+        cls,
         prompt,
         safety_tolerance,
         output_format,
@@ -80,7 +68,7 @@ class Flux2MaxDirect(BaseFlux):
             "output_format": output_format,
         }
 
-        # Convert IMAGE tensors to base64 and attach
+        # Convert IMAGE tensors to base64
         image_slots = [
             ("input_image", image_1),
             ("input_image_2", image_2),
@@ -107,77 +95,18 @@ class Flux2MaxDirect(BaseFlux):
             arguments["webhook_secret"] = webhook_secret
 
         try:
-            task_id = self.post_request("flux-2-max", arguments, config)
+            task_id = await post_request("flux-2-max", arguments, config)
             if task_id:
                 print(f"[BFL Flux2MaxDirect] Task ID '{task_id}'")
-                return self._poll_with_progress(
-                    task_id, output_format=output_format, config_override=config
+                pbar = comfy.utils.ProgressBar(40)
+                result = await poll_for_result(
+                    task_id,
+                    output_format=output_format,
+                    config_override=config,
+                    pbar=pbar,
                 )
-            return self.create_blank_image()
+                return io.NodeOutput(result)
+            return io.NodeOutput(create_blank_image())
         except Exception as e:
             print(f"[BFL Flux2MaxDirect] Error: {str(e)}")
-            return self.create_blank_image()
-
-    def _poll_with_progress(self, task_id, output_format="jpeg", max_attempts=40, config_override=None):
-        config_loader_instance = get_config_loader(config_override)
-        headers = {"x-key": config_loader_instance.get_x_key()}
-        get_url = config_loader_instance.create_url(f"get_result?id={task_id}")
-
-        pbar = comfy.utils.ProgressBar(max_attempts)
-        attempt = 1
-        start_time = time.time()
-
-        while attempt <= max_attempts:
-            elapsed = time.time() - start_time
-            try:
-                print(f"[BFL Flux2MaxDirect] Poll {attempt}/{max_attempts} | {elapsed:.1f}s")
-                result_response = requests.get(get_url, headers=headers, timeout=REQUEST_TIMEOUT)
-
-                if result_response.status_code != 200:
-                    print(f"[BFL Flux2MaxDirect] HTTP {result_response.status_code}")
-                    pbar.update(1)
-                    attempt += 1
-                    if attempt <= max_attempts:
-                        time.sleep(5)
-                    continue
-
-                result = result_response.json()
-                status = result.get("status")
-
-                if Status(status) == Status.READY:
-                    pbar.update(max_attempts - attempt + 1)  # fill to 100%
-                    print(f"[BFL Flux2MaxDirect] Ready after {elapsed:.1f}s")
-                    return self.process_result(result, output_format=output_format)
-                elif Status(status) == Status.PENDING:
-                    pbar.update(1)
-                    attempt += 1
-                    if attempt <= max_attempts:
-                        time.sleep(5)
-                elif Status(status) in [Status.ERROR, Status.CONTENT_MODERATED, Status.REQUEST_MODERATED]:
-                    pbar.update(max_attempts - attempt + 1)
-                    print(f"[BFL Flux2MaxDirect] Terminal status: {status}")
-                    break
-                else:
-                    pbar.update(1)
-                    attempt += 1
-                    if attempt <= max_attempts:
-                        time.sleep(5)
-
-            except Exception as e:
-                print(f"[BFL Flux2MaxDirect] Error on poll {attempt}: {str(e)}")
-                pbar.update(1)
-                attempt += 1
-                if attempt <= max_attempts:
-                    time.sleep(5)
-
-        print(f"[BFL Flux2MaxDirect] Exhausted {max_attempts} attempts — blank image")
-        return self.create_blank_image()
-
-
-NODE_CLASS_MAPPINGS = {
-    "Flux2MaxDirect_BFL": Flux2MaxDirect,
-}
-
-NODE_DISPLAY_NAME_MAPPINGS = {
-    "Flux2MaxDirect_BFL": "Flux 2 Max Direct (BFL)",
-}
+            return io.NodeOutput(create_blank_image())

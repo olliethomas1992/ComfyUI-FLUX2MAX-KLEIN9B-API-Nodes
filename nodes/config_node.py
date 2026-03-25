@@ -1,77 +1,60 @@
+"""BFL Config node — V3 schema."""
+from comfy_api.latest import ComfyExtension, io
 from .config import ConfigLoader
 
-class FluxConfig_BFL:
-    """
-    Configuration node for BFL API settings.
+# Custom type for BFL config
+BflConfig = io.Custom("BFL_CONFIG")
+
+
+class FluxConfig(io.ComfyNode):
+    """Configuration node for BFL API settings.
     Provides optional configuration that can be connected to other nodes.
-    If not connected, nodes will use the default file-based configuration.
-    """
-    
+    If not connected, nodes will use the default file-based configuration."""
+
     @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "x_key": ("STRING", {
-                    "default": "", 
-                    "multiline": False,
-                    "placeholder": "Enter your BFL API key"
-                }),
-                "base_url": ("STRING", {
-                    "default": "https://api.bfl.ai/v1/",
-                    "multiline": False,
-                    "placeholder": "Base API URL"
-                }),
-            },
-            "optional": {
-                "region": (["none", "us", "eu"], {
-                    "default": "none",
-                    "tooltip": "Regional endpoint for finetuning operations"
-                })
-            }
-        }
-    
-    RETURN_TYPES = ("BFL_CONFIG",)
-    RETURN_NAMES = ("config",)
-    FUNCTION = "create_config"
-    CATEGORY = "BFL/Config"
-    
-    def create_config(self, x_key, base_url, region="none"):
-        """Create a configuration object with the provided settings."""
-        
-        # Regional endpoints for finetuning (required by BFL API)
+    def define_schema(cls):
+        return io.Schema(
+            node_id="FluxConfig_BFL",
+            display_name="Flux Config (BFL)",
+            category="BFL/Config",
+            description="Configure BFL API key and endpoint for Flux nodes",
+            inputs=[
+                io.String.Input("x_key", default="", tooltip="BFL API key"),
+                io.String.Input(
+                    "base_url",
+                    default="https://api.bfl.ai/v1/",
+                    tooltip="Base API URL",
+                ),
+                io.Combo.Input(
+                    "region",
+                    options=["none", "us", "eu"],
+                    default="none",
+                    tooltip="Regional endpoint for finetuning operations",
+                    optional=True,
+                ),
+            ],
+            outputs=[
+                BflConfig.Output(display_name="config"),
+            ],
+        )
+
+    @classmethod
+    def execute(cls, x_key, base_url, region="none"):
         regional_endpoints = {
             "us": "https://api.us.bfl.ai",
-            "eu": "https://api.eu.bfl.ai"
+            "eu": "https://api.eu.bfl.ai",
         }
-        
+
         config = {
             "x_key": x_key.strip() if x_key.strip() else None,
             "base_url": base_url.strip() if base_url.strip() else "https://api.bfl.ai/v1/",
             "regional_endpoints": regional_endpoints,
-            "default_region": region if region != "none" else None
+            "default_region": region if region != "none" else None,
         }
-        
-        return (config,)
+
+        return io.NodeOutput(config)
 
 
 def get_config_loader(config_override=None):
-    """
-    Get a ConfigLoader instance with optional config override.
-    
-    Args:
-        config_override: Optional config dict from FluxConfig_BFL node
-        
-    Returns:
-        ConfigLoader instance
-    """
+    """Get a ConfigLoader instance with optional config override."""
     return ConfigLoader(config_override)
-
-
-# Node mappings for ComfyUI
-NODE_CLASS_MAPPINGS = {
-    "FluxConfig_BFL": FluxConfig_BFL,
-}
-
-NODE_DISPLAY_NAME_MAPPINGS = {
-    "FluxConfig_BFL": "Flux Config (BFL)",
-}

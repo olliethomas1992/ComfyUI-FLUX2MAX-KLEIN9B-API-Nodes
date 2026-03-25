@@ -1,73 +1,73 @@
-"""Tests that node classes are properly structured for ComfyUI registration."""
+"""Tests that V3 node classes are properly structured."""
 import pytest
 
 
-def test_flux2max_direct_has_required_attrs():
-    from nodes.flux2max_direct import Flux2MaxDirect, NODE_CLASS_MAPPINGS, NODE_DISPLAY_NAME_MAPPINGS
-
-    assert "Flux2MaxDirect_BFL" in NODE_CLASS_MAPPINGS
-    assert NODE_CLASS_MAPPINGS["Flux2MaxDirect_BFL"] is Flux2MaxDirect
-    assert "Flux2MaxDirect_BFL" in NODE_DISPLAY_NAME_MAPPINGS
-
-    # ComfyUI required class attributes
-    assert Flux2MaxDirect.RETURN_TYPES == ("IMAGE",)
-    assert Flux2MaxDirect.FUNCTION == "generate_image"
-    assert Flux2MaxDirect.CATEGORY == "BFL/Flux2"
-
-
-def test_flux2klein_direct_has_required_attrs():
-    from nodes.flux2klein_direct import Flux2Klein9bDirect, NODE_CLASS_MAPPINGS, NODE_DISPLAY_NAME_MAPPINGS
-
-    assert "Flux2Klein9bDirect_BFL" in NODE_CLASS_MAPPINGS
-    assert NODE_CLASS_MAPPINGS["Flux2Klein9bDirect_BFL"] is Flux2Klein9bDirect
-    assert "Flux2Klein9bDirect_BFL" in NODE_DISPLAY_NAME_MAPPINGS
-
-    assert Flux2Klein9bDirect.RETURN_TYPES == ("IMAGE",)
-    assert Flux2Klein9bDirect.FUNCTION == "generate_image"
-    assert Flux2Klein9bDirect.CATEGORY == "BFL/Flux2"
-
-
-def test_flux2max_input_types_structure():
+def test_flux2max_direct_has_schema():
     from nodes.flux2max_direct import Flux2MaxDirect
 
-    inputs = Flux2MaxDirect.INPUT_TYPES()
-    assert "required" in inputs
-    assert "optional" in inputs
-
-    # Required fields
-    assert "prompt" in inputs["required"]
-    assert "safety_tolerance" in inputs["required"]
-    assert "output_format" in inputs["required"]
-
-    # Should have 8 image slots
-    for i in range(1, 9):
-        assert f"image_{i}" in inputs["optional"]
+    schema = Flux2MaxDirect.define_schema()
+    assert schema.node_id == "Flux2MaxDirect_BFL"
+    assert schema.display_name == "Flux 2 Max Direct (BFL)"
+    assert schema.category == "BFL/Flux2"
 
 
-def test_flux2klein_input_types_structure():
+def test_flux2klein_direct_has_schema():
     from nodes.flux2klein_direct import Flux2Klein9bDirect
 
-    inputs = Flux2Klein9bDirect.INPUT_TYPES()
-    assert "required" in inputs
-    assert "optional" in inputs
+    schema = Flux2Klein9bDirect.define_schema()
+    assert schema.node_id == "Flux2Klein9bDirect_BFL"
+    assert schema.display_name == "Flux 2 Klein 9B Direct (BFL)"
+    assert schema.category == "BFL/Flux2"
 
-    # Should have 4 image slots (not 8)
-    for i in range(1, 5):
-        assert f"image_{i}" in inputs["optional"]
-    assert "image_5" not in inputs["optional"]
+
+def test_flux2max_has_8_image_inputs():
+    from nodes.flux2max_direct import Flux2MaxDirect
+
+    schema = Flux2MaxDirect.define_schema()
+    image_inputs = [i for i in schema.inputs if hasattr(i, 'id') and i.id.startswith("image_")]
+    assert len(image_inputs) == 8
+
+
+def test_flux2klein_has_4_image_inputs():
+    from nodes.flux2klein_direct import Flux2Klein9bDirect
+
+    schema = Flux2Klein9bDirect.define_schema()
+    image_inputs = [i for i in schema.inputs if hasattr(i, 'id') and i.id.startswith("image_")]
+    assert len(image_inputs) == 4
 
 
 def test_flux2max_has_config_input():
     from nodes.flux2max_direct import Flux2MaxDirect
 
-    inputs = Flux2MaxDirect.INPUT_TYPES()
-    assert "config" in inputs["optional"]
-    assert inputs["optional"]["config"] == ("BFL_CONFIG",)
+    schema = Flux2MaxDirect.define_schema()
+    config_inputs = [i for i in schema.inputs if hasattr(i, 'id') and i.id == "config"]
+    assert len(config_inputs) == 1
 
 
 def test_flux2klein_has_config_input():
     from nodes.flux2klein_direct import Flux2Klein9bDirect
 
-    inputs = Flux2Klein9bDirect.INPUT_TYPES()
-    assert "config" in inputs["optional"]
-    assert inputs["optional"]["config"] == ("BFL_CONFIG",)
+    schema = Flux2Klein9bDirect.define_schema()
+    config_inputs = [i for i in schema.inputs if hasattr(i, 'id') and i.id == "config"]
+    assert len(config_inputs) == 1
+
+
+def test_execute_is_classmethod():
+    from nodes.flux2max_direct import Flux2MaxDirect
+    from nodes.flux2klein_direct import Flux2Klein9bDirect
+
+    assert isinstance(
+        Flux2MaxDirect.__dict__["execute"], classmethod
+    )
+    assert isinstance(
+        Flux2Klein9bDirect.__dict__["execute"], classmethod
+    )
+
+
+def test_config_node_has_schema():
+    from nodes.config_node import FluxConfig
+
+    schema = FluxConfig.define_schema()
+    assert schema.node_id == "FluxConfig_BFL"
+    assert schema.display_name == "Flux Config (BFL)"
+    assert schema.category == "BFL/Config"

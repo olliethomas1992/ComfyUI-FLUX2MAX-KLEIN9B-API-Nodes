@@ -1,19 +1,17 @@
-import importlib
+"""ComfyUI V3 node pack for Flux 2 Max and Klein 9B (BFL API)."""
+from comfy_api.latest import ComfyExtension
+from .nodes.flux2max_direct import Flux2MaxDirect
+from .nodes.flux2klein_direct import Flux2Klein9bDirect
+from .nodes.config_node import FluxConfig
 
-node_list = [
-    "config_node",
-    "flux2max_direct",
-    "flux2klein_direct",
-]
 
-NODE_CLASS_MAPPINGS = {}
-NODE_DISPLAY_NAME_MAPPINGS = {}
+class BflFluxExtension(ComfyExtension):
+    async def get_node_list(self):
+        return [Flux2MaxDirect, Flux2Klein9bDirect, FluxConfig]
 
-for module_name in node_list:
-    imported_module = importlib.import_module(f".nodes.{module_name}", __name__)
-    NODE_CLASS_MAPPINGS = {**NODE_CLASS_MAPPINGS, **imported_module.NODE_CLASS_MAPPINGS}
-    NODE_DISPLAY_NAME_MAPPINGS = {**NODE_DISPLAY_NAME_MAPPINGS, **imported_module.NODE_DISPLAY_NAME_MAPPINGS}
+
+async def comfy_entrypoint():
+    return BflFluxExtension()
+
 
 WEB_DIRECTORY = "./web"
-
-__all__ = ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS"]
