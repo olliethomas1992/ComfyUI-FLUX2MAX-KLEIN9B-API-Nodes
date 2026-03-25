@@ -6,6 +6,8 @@ node_list = [
 "finetune",
 "config_node",
 "utils",
+"flux2max_direct",
+"flux2klein_direct",
 ]
 
 NODE_CLASS_MAPPINGS = {}
