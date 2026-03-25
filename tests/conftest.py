@@ -136,7 +136,11 @@ sys.modules["comfy_api.latest"] = comfy_api_latest
 
 # --- Pre-import the node submodules so @patch targets resolve ---
 import nodes.flux2max_direct  # noqa: E402
+import nodes.flux2pro  # noqa: E402
+import nodes.flux2pro_preview  # noqa: E402
 import nodes.flux2klein_direct  # noqa: E402
+import nodes.flux2klein4b  # noqa: E402
+import nodes.flux2klein9b_kv  # noqa: E402
 
 # --- Fixtures ---
 import pytest  # noqa: E402

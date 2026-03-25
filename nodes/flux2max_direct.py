@@ -1,26 +1,27 @@
-"""Flux 2 Max Direct — V3 async node with 8 IMAGE slots."""
+"""FLUX.2 [Max] — V3 async node with 8 IMAGE slots."""
 from comfy_api.latest import ComfyExtension, io
 import comfy.utils
 from .base import image_to_base64, create_blank_image, post_request, poll_for_result
 
-# Custom type for BFL config passthrough
 BflConfig = io.Custom("BFL_CONFIG")
 
 
-class Flux2MaxDirect(io.ComfyNode):
-    """Flux 2 Max with direct IMAGE inputs — up to 8 reference images."""
+class Flux2Max(io.ComfyNode):
+    """Generate images via FLUX.2 [Max] API with up to 8 reference images."""
 
     @classmethod
     def define_schema(cls):
         return io.Schema(
-            node_id="Flux2MaxDirect_BFL",
-            display_name="Flux 2 Max Direct (BFL)",
-            category="BFL/Flux2",
-            description="Generate images via Flux 2 Max API with up to 8 reference images",
+            node_id="Flux2Max_BFL",
+            display_name="FLUX.2 [Max] (BFL)",
+            category="BFL/FLUX.2",
+            description="Generate images via FLUX.2 [Max] API with up to 8 reference images",
             inputs=[
                 io.String.Input("prompt", default="", multiline=True),
-                io.Int.Input("safety_tolerance", default=2, min=0, max=5),
+                io.Boolean.Input("disable_pup", default=False, tooltip="Disable prompt upsampling"),
+                io.Int.Input("safety_tolerance", default=2, min=0, max=5, tooltip="0=strict, 5=lenient"),
                 io.Combo.Input("output_format", options=["jpeg", "png"], default="jpeg"),
+                io.Boolean.Input("transparent_bg", default=False, tooltip="Remove background, returns RGBA PNG"),
                 io.Image.Input("image_1", optional=True),
                 io.Image.Input("image_2", optional=True),
                 io.Image.Input("image_3", optional=True),
@@ -29,9 +30,9 @@ class Flux2MaxDirect(io.ComfyNode):
                 io.Image.Input("image_6", optional=True),
                 io.Image.Input("image_7", optional=True),
                 io.Image.Input("image_8", optional=True),
-                io.Int.Input("width", default=0, min=0),
-                io.Int.Input("height", default=0, min=0),
-                io.Int.Input("seed", default=-1),
+                io.Int.Input("width", default=0, min=0, tooltip="0=auto, min 64"),
+                io.Int.Input("height", default=0, min=0, tooltip="0=auto, min 64"),
+                io.Int.Input("seed", default=-1, tooltip="-1=random"),
                 io.String.Input("webhook_url", default="", optional=True),
                 io.String.Input("webhook_secret", default="", optional=True),
                 BflConfig.Input("config", optional=True),
@@ -45,39 +46,29 @@ class Flux2MaxDirect(io.ComfyNode):
     async def execute(
         cls,
         prompt,
+        disable_pup,
         safety_tolerance,
         output_format,
-        image_1=None,
-        image_2=None,
-        image_3=None,
-        image_4=None,
-        image_5=None,
-        image_6=None,
-        image_7=None,
-        image_8=None,
-        width=0,
-        height=0,
-        seed=-1,
-        webhook_url="",
-        webhook_secret="",
+        transparent_bg,
+        image_1=None, image_2=None, image_3=None, image_4=None,
+        image_5=None, image_6=None, image_7=None, image_8=None,
+        width=0, height=0, seed=-1,
+        webhook_url="", webhook_secret="",
         config=None,
     ):
         arguments = {
             "prompt": prompt,
+            "disable_pup": disable_pup,
             "safety_tolerance": safety_tolerance,
             "output_format": output_format,
+            "transparent_bg": transparent_bg,
         }
 
-        # Convert IMAGE tensors to base64
         image_slots = [
-            ("input_image", image_1),
-            ("input_image_2", image_2),
-            ("input_image_3", image_3),
-            ("input_image_4", image_4),
-            ("input_image_5", image_5),
-            ("input_image_6", image_6),
-            ("input_image_7", image_7),
-            ("input_image_8", image_8),
+            ("input_image", image_1), ("input_image_2", image_2),
+            ("input_image_3", image_3), ("input_image_4", image_4),
+            ("input_image_5", image_5), ("input_image_6", image_6),
+            ("input_image_7", image_7), ("input_image_8", image_8),
         ]
         for key, img in image_slots:
             if img is not None:
@@ -97,16 +88,11 @@ class Flux2MaxDirect(io.ComfyNode):
         try:
             task_id = await post_request("flux-2-max", arguments, config)
             if task_id:
-                print(f"[BFL Flux2MaxDirect] Task ID '{task_id}'")
+                print(f"[BFL FLUX.2 Max] Task ID '{task_id}'")
                 pbar = comfy.utils.ProgressBar(40)
-                result = await poll_for_result(
-                    task_id,
-                    output_format=output_format,
-                    config_override=config,
-                    pbar=pbar,
-                )
+                result = await poll_for_result(task_id, output_format=output_format, config_override=config, pbar=pbar)
                 return io.NodeOutput(result)
             return io.NodeOutput(create_blank_image())
         except Exception as e:
-            print(f"[BFL Flux2MaxDirect] Error: {str(e)}")
+            print(f"[BFL FLUX.2 Max] Error: {str(e)}")
             return io.NodeOutput(create_blank_image())
