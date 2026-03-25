@@ -28,4 +28,4 @@ async def comfy_entrypoint():
     return BflFlux2Extension()
 
 
-WEB_DIRECTORY = "./web"
+

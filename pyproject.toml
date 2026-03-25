@@ -1,15 +1,9 @@
 [project]
-name = "comfyui-flux-bfl-api"
-description = "Custom nodes for integrating Flux models with the BFL API."
-version = "1.0.13"
+name = "comfyui-flux2max-klein9b-api-nodes"
+description = "ComfyUI V3 nodes for all FLUX.2 models via the BFL API — direct IMAGE inputs, async polling, progress bars."
+version = "2.0.0"
 license = {file = "LICENSE"}
-dependencies = ["torch"]
+dependencies = ["torch", "aiohttp"]
 
 [project.urls]
-Repository = "https://github.com/gelasdev/ComfyUI-FLUX-BFL-API"
-#  Used by Comfy Registry https://comfyregistry.org
-
-[tool.comfy]
-PublisherId = "gelas"
-DisplayName = "ComfyUI-FLUX-BFL-API"
-Icon = ""
+Repository = "https://github.com/olliethomas1992/ComfyUI-FLUX2MAX-KLEIN9B-API-Nodes"
