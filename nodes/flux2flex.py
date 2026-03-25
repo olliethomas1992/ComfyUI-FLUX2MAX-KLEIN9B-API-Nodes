@@ -14,7 +14,7 @@ class Flux2Flex(io.ComfyNode):
         return io.Schema(
             node_id="Flux2Flex_BFL",
             display_name="FLUX.2 [Flex]",
-            category="BFL/FLUX.2",
+            category="FLUX.2",
             description="Generate or edit images via FLUX.2 [Flex] API with guidance and steps control",
             inputs=[
                 io.String.Input("prompt", default="", multiline=True, tooltip="Text prompt describing the desired image"),

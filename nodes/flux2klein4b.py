@@ -14,7 +14,7 @@ class Flux2Klein4B(io.ComfyNode):
         return io.Schema(
             node_id="Flux2Klein4B_BFL",
             display_name="FLUX.2 [Klein 4B]",
-            category="BFL/FLUX.2",
+            category="FLUX.2",
             description="Generate or edit images via FLUX.2 [Klein 4B] API with up to 4 reference images",
             inputs=[
                 io.String.Input("prompt", default="", multiline=True, tooltip="Text prompt describing the desired image"),

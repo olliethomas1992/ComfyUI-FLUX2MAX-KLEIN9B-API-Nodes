@@ -16,7 +16,7 @@ class FluxConfig(io.ComfyNode):
         return io.Schema(
             node_id="FluxConfig_BFL",
             display_name="FLUX.2 Config",
-            category="BFL/Config",
+            category="FLUX.2",
             description="Configure BFL API key and endpoint for Flux nodes",
             inputs=[
                 io.String.Input("x_key", default="", tooltip="BFL API key"),

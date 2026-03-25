@@ -14,7 +14,7 @@ class Flux2Pro(io.ComfyNode):
         return io.Schema(
             node_id="Flux2Pro_BFL",
             display_name="FLUX.2 [Pro]",
-            category="BFL/FLUX.2",
+            category="FLUX.2",
             description="Generate or edit images via FLUX.2 [Pro] API with up to 8 reference images",
             inputs=[
                 io.String.Input("prompt", default="", multiline=True, tooltip="Text prompt describing the desired image"),

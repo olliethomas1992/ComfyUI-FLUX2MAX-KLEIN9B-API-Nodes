@@ -29,9 +29,9 @@ class TestFlux2InputsNodes:
     """Nodes using the Flux2Inputs schema: 8 images, prompt_upsampling, transparent_bg."""
 
     NODES = [
-        ("nodes.flux2max_direct", "Flux2Max", "Flux2Max_BFL", "FLUX.2 [Max]", "BFL/FLUX.2"),
-        ("nodes.flux2pro", "Flux2Pro", "Flux2Pro_BFL", "FLUX.2 [Pro]", "BFL/FLUX.2"),
-        ("nodes.flux2pro_preview", "Flux2ProPreview", "Flux2ProPreview_BFL", "FLUX.2 [Pro] Preview", "BFL/FLUX.2"),
+        ("nodes.flux2max_direct", "Flux2Max", "Flux2Max_BFL", "FLUX.2 [Max]", "FLUX.2"),
+        ("nodes.flux2pro", "Flux2Pro", "Flux2Pro_BFL", "FLUX.2 [Pro]", "FLUX.2"),
+        ("nodes.flux2pro_preview", "Flux2ProPreview", "Flux2ProPreview_BFL", "FLUX.2 [Pro] Preview", "FLUX.2"),
     ]
 
     @pytest.mark.parametrize("module,cls_name,node_id,display_name,category", NODES)
@@ -94,9 +94,9 @@ class TestFlux2KleinInputsNodes:
     """Nodes using the Flux2KleinInputs schema: 4 images, no prompt_upsampling, transparent_bg."""
 
     NODES = [
-        ("nodes.flux2klein_direct", "Flux2Klein9B", "Flux2Klein9B_BFL", "FLUX.2 [Klein 9B]", "BFL/FLUX.2"),
-        ("nodes.flux2klein4b", "Flux2Klein4B", "Flux2Klein4B_BFL", "FLUX.2 [Klein 4B]", "BFL/FLUX.2"),
-        ("nodes.flux2klein9b_kv", "Flux2Klein9BKV", "Flux2Klein9BKV_BFL", "FLUX.2 [Klein 9B KV]", "BFL/FLUX.2"),
+        ("nodes.flux2klein_direct", "Flux2Klein9B", "Flux2Klein9B_BFL", "FLUX.2 [Klein 9B]", "FLUX.2"),
+        ("nodes.flux2klein4b", "Flux2Klein4B", "Flux2Klein4B_BFL", "FLUX.2 [Klein 4B]", "FLUX.2"),
+        ("nodes.flux2klein9b_kv", "Flux2Klein9BKV", "Flux2Klein9BKV_BFL", "FLUX.2 [Klein 9B KV]", "FLUX.2"),
     ]
 
     @pytest.mark.parametrize("module,cls_name,node_id,display_name,category", NODES)
@@ -160,7 +160,7 @@ def test_config_node_has_schema():
     schema = FluxConfig.define_schema()
     assert schema.node_id == "FluxConfig_BFL"
     assert schema.display_name == "FLUX.2 Config"
-    assert schema.category == "BFL/Config"
+    assert schema.category == "FLUX.2"
 
 
 # ---------------------------------------------------------------------------
@@ -175,7 +175,7 @@ class TestFlux2FlexNode:
         schema = Flux2Flex.define_schema()
         assert schema.node_id == "Flux2Flex_BFL"
         assert schema.display_name == "FLUX.2 [Flex]"
-        assert schema.category == "BFL/FLUX.2"
+        assert schema.category == "FLUX.2"
 
     def test_has_8_image_inputs(self):
         from nodes.flux2flex import Flux2Flex
