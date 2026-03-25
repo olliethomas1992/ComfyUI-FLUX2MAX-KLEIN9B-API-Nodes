@@ -18,7 +18,7 @@ class Flux2Pro(io.ComfyNode):
             description="Generate or edit images via FLUX.2 [Pro] API with up to 8 reference images",
             inputs=[
                 io.String.Input("prompt", default="", multiline=True),
-                io.Boolean.Input("disable_pup", default=False, tooltip="Disable prompt upsampling"),
+                io.Boolean.Input("prompt_upsampling", default=True, tooltip="Use prompt upsampling to enhance your prompt"),
                 io.Int.Input("safety_tolerance", default=2, min=0, max=5, tooltip="0=strict, 5=lenient"),
                 io.Combo.Input("output_format", options=["jpeg", "png"], default="jpeg"),
                 io.Boolean.Input("transparent_bg", default=False, tooltip="Remove background, returns RGBA PNG"),
@@ -46,7 +46,7 @@ class Flux2Pro(io.ComfyNode):
     async def execute(
         cls,
         prompt,
-        disable_pup,
+        prompt_upsampling,
         safety_tolerance,
         output_format,
         transparent_bg,
@@ -58,7 +58,7 @@ class Flux2Pro(io.ComfyNode):
     ):
         arguments = {
             "prompt": prompt,
-            "disable_pup": disable_pup,
+            "disable_pup": prompt_upsampling,
             "safety_tolerance": safety_tolerance,
             "output_format": output_format,
             "transparent_bg": transparent_bg,

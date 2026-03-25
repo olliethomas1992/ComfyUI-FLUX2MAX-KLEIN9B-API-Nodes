@@ -18,7 +18,7 @@ class Flux2Flex(io.ComfyNode):
             description="Generate or edit images via FLUX.2 [Flex] API with guidance and steps control",
             inputs=[
                 io.String.Input("prompt", default="", multiline=True),
-                io.Boolean.Input("prompt_upsampling", default=True, tooltip="Whether to use prompt upsampling"),
+                io.Boolean.Input("prompt_upsampling", default=True, tooltip="Use prompt upsampling to enhance your prompt"),
                 io.Float.Input("guidance", default=5.0, min=1.5, max=10.0, step=0.1,
                                tooltip="Higher = better prompt adherence, lower = more realistic"),
                 io.Int.Input("steps", default=50, min=1, max=50,

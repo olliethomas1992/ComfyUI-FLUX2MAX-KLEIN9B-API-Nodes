@@ -35,13 +35,13 @@ class TestFlux2InputsNodes:
         assert len(image_inputs) == 8
 
     @pytest.mark.parametrize("module,cls_name,node_id,display_name,category", NODES)
-    def test_has_disable_pup(self, module, cls_name, node_id, display_name, category):
+    def test_has_prompt_upsampling(self, module, cls_name, node_id, display_name, category):
         import importlib
         mod = importlib.import_module(module)
         cls = getattr(mod, cls_name)
         schema = cls.define_schema()
-        pup_inputs = [i for i in schema.inputs if hasattr(i, "id") and i.id == "disable_pup"]
-        assert len(pup_inputs) == 1
+        pu_inputs = [i for i in schema.inputs if hasattr(i, "id") and i.id == "prompt_upsampling"]
+        assert len(pu_inputs) == 1
 
     @pytest.mark.parametrize("module,cls_name,node_id,display_name,category", NODES)
     def test_has_transparent_bg(self, module, cls_name, node_id, display_name, category):
@@ -93,13 +93,13 @@ class TestFlux2KleinInputsNodes:
         assert len(image_inputs) == 4
 
     @pytest.mark.parametrize("module,cls_name,node_id,display_name,category", NODES)
-    def test_no_disable_pup(self, module, cls_name, node_id, display_name, category):
+    def test_no_prompt_upsampling(self, module, cls_name, node_id, display_name, category):
         import importlib
         mod = importlib.import_module(module)
         cls = getattr(mod, cls_name)
         schema = cls.define_schema()
-        pup_inputs = [i for i in schema.inputs if hasattr(i, "id") and i.id == "disable_pup"]
-        assert len(pup_inputs) == 0
+        pu_inputs = [i for i in schema.inputs if hasattr(i, "id") and i.id == "prompt_upsampling"]
+        assert len(pu_inputs) == 0
 
     @pytest.mark.parametrize("module,cls_name,node_id,display_name,category", NODES)
     def test_has_transparent_bg(self, module, cls_name, node_id, display_name, category):
@@ -168,7 +168,8 @@ class TestFlux2FlexNode:
         s = [i for i in schema.inputs if hasattr(i, "id") and i.id == "steps"]
         assert len(s) == 1
 
-    def test_no_disable_pup(self):
+    def test_no_disable_pup_in_api_payload(self):
+        """Flex uses prompt_upsampling natively, not disable_pup."""
         from nodes.flux2flex import Flux2Flex
         schema = Flux2Flex.define_schema()
         dp = [i for i in schema.inputs if hasattr(i, "id") and i.id == "disable_pup"]

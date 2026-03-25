@@ -54,8 +54,8 @@ class TestPayloadIsolation:
         red_img = _make_image(255, 0, 0)
         blue_img = _make_image(0, 0, 255)
 
-        run_async(Flux2Max.execute(prompt="prompt A", disable_pup=False, safety_tolerance=2, output_format="jpeg", transparent_bg=False, image_1=red_img))
-        run_async(Flux2Max.execute(prompt="prompt B", disable_pup=False, safety_tolerance=2, output_format="jpeg", transparent_bg=False, image_1=blue_img))
+        run_async(Flux2Max.execute(prompt="prompt A", prompt_upsampling=True, safety_tolerance=2, output_format="jpeg", transparent_bg=False, image_1=red_img))
+        run_async(Flux2Max.execute(prompt="prompt B", prompt_upsampling=True, safety_tolerance=2, output_format="jpeg", transparent_bg=False, image_1=blue_img))
 
         assert mock_post.call_count == 2
 
@@ -99,8 +99,8 @@ class TestConcurrentExecution:
         blue_img = _make_image(0, 0, 255)
 
         async def run_both():
-            r1 = Flux2Max.execute(prompt="async-A", disable_pup=False, safety_tolerance=2, output_format="jpeg", transparent_bg=False, image_1=red_img)
-            r2 = Flux2Max.execute(prompt="async-B", disable_pup=False, safety_tolerance=2, output_format="jpeg", transparent_bg=False, image_1=blue_img)
+            r1 = Flux2Max.execute(prompt="async-A", prompt_upsampling=True, safety_tolerance=2, output_format="jpeg", transparent_bg=False, image_1=red_img)
+            r2 = Flux2Max.execute(prompt="async-B", prompt_upsampling=True, safety_tolerance=2, output_format="jpeg", transparent_bg=False, image_1=blue_img)
             return await asyncio.gather(r1, r2)
 
         results = run_async(run_both())
@@ -128,7 +128,7 @@ class TestMixedNodeTypes:
         mock_klein_post.side_effect = lambda *a, **kw: next(task_ids_klein)
 
         async def run_both():
-            r1 = Flux2Max.execute(prompt="max-prompt", disable_pup=False, safety_tolerance=2, output_format="jpeg", transparent_bg=False, image_1=_make_image(255, 0, 0))
+            r1 = Flux2Max.execute(prompt="max-prompt", prompt_upsampling=True, safety_tolerance=2, output_format="jpeg", transparent_bg=False, image_1=_make_image(255, 0, 0))
             r2 = Flux2Klein9B.execute(prompt="klein-prompt", safety_tolerance=2, output_format="jpeg", transparent_bg=False, image_1=_make_image(0, 255, 0))
             return await asyncio.gather(r1, r2)
 
