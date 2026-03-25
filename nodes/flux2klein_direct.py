@@ -1,8 +1,13 @@
 import io
 import base64
+import time
+import requests
 import numpy as np
 from PIL import Image
-from .base import BaseFlux
+import comfy.utils
+from .base import BaseFlux, REQUEST_TIMEOUT
+from .status import Status
+from .config_node import get_config_loader
 
 
 def image_to_base64(image_tensor):
@@ -92,13 +97,68 @@ class Flux2Klein9bDirect(BaseFlux):
             task_id = self.post_request("flux-2-klein-9b", arguments, config)
             if task_id:
                 print(f"[BFL Flux2Klein9bDirect] Task ID '{task_id}'")
-                return self.get_result(
+                return self._poll_with_progress(
                     task_id, output_format=output_format, config_override=config
                 )
             return self.create_blank_image()
         except Exception as e:
             print(f"[BFL Flux2Klein9bDirect] Error: {str(e)}")
             return self.create_blank_image()
+
+    def _poll_with_progress(self, task_id, output_format="jpeg", max_attempts=40, config_override=None):
+        config_loader_instance = get_config_loader(config_override)
+        headers = {"x-key": config_loader_instance.get_x_key()}
+        get_url = config_loader_instance.create_url(f"get_result?id={task_id}")
+
+        pbar = comfy.utils.ProgressBar(max_attempts)
+        attempt = 1
+        start_time = time.time()
+
+        while attempt <= max_attempts:
+            elapsed = time.time() - start_time
+            try:
+                print(f"[BFL Flux2Klein9bDirect] Poll {attempt}/{max_attempts} | {elapsed:.1f}s")
+                result_response = requests.get(get_url, headers=headers, timeout=REQUEST_TIMEOUT)
+
+                if result_response.status_code != 200:
+                    print(f"[BFL Flux2Klein9bDirect] HTTP {result_response.status_code}")
+                    pbar.update(1)
+                    attempt += 1
+                    if attempt <= max_attempts:
+                        time.sleep(5)
+                    continue
+
+                result = result_response.json()
+                status = result.get("status")
+
+                if Status(status) == Status.READY:
+                    pbar.update(max_attempts - attempt + 1)  # fill to 100%
+                    print(f"[BFL Flux2Klein9bDirect] Ready after {elapsed:.1f}s")
+                    return self.process_result(result, output_format=output_format)
+                elif Status(status) == Status.PENDING:
+                    pbar.update(1)
+                    attempt += 1
+                    if attempt <= max_attempts:
+                        time.sleep(5)
+                elif Status(status) in [Status.ERROR, Status.CONTENT_MODERATED, Status.REQUEST_MODERATED]:
+                    pbar.update(max_attempts - attempt + 1)
+                    print(f"[BFL Flux2Klein9bDirect] Terminal status: {status}")
+                    break
+                else:
+                    pbar.update(1)
+                    attempt += 1
+                    if attempt <= max_attempts:
+                        time.sleep(5)
+
+            except Exception as e:
+                print(f"[BFL Flux2Klein9bDirect] Error on poll {attempt}: {str(e)}")
+                pbar.update(1)
+                attempt += 1
+                if attempt <= max_attempts:
+                    time.sleep(5)
+
+        print(f"[BFL Flux2Klein9bDirect] Exhausted {max_attempts} attempts — blank image")
+        return self.create_blank_image()
 
 
 NODE_CLASS_MAPPINGS = {
